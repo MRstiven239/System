@@ -139,7 +139,7 @@ export async function fetchTransactions(userId) {
     .from('transactions')
     .select('*')
     .eq('user_id', userId)
-    .order('date', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
 
@@ -150,7 +150,7 @@ export async function fetchTransactions(userId) {
     name: t.name || '',
     category: t.category || '',
     description: t.description || '',
-    date: Number(t.date),
+    date: t.date ? Number(t.date) : new Date(t.created_at).getTime(),
     accountId: t.account_id || null,
     fromAccountId: t.from_account_id || null,
     toAccountId: t.to_account_id || null,
@@ -167,7 +167,7 @@ export async function saveTransaction(userId, tx) {
     name: tx.name || null,
     category: tx.category || null,
     description: tx.description || null,
-    date: tx.date,
+    date: tx.date || Date.now(),
     account_id: tx.accountId || null,
     from_account_id: tx.fromAccountId || null,
     to_account_id: tx.toAccountId || null,
