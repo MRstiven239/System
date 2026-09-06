@@ -1,7 +1,9 @@
 import { useTheme } from '../../theme/ThemeContext';
 
-export function AmbientBackground() {
+export function AmbientBackground({ paused = false }) {
   const theme = useTheme();
+
+  const animState = paused ? 'paused' : 'running';
 
   return (
     <div
@@ -25,6 +27,7 @@ export function AmbientBackground() {
           height: '70vw',
           background: `radial-gradient(circle, ${theme.accentGlow} 0%, transparent 60%)`,
           animation: 'ambientGlow 20s ease-in-out infinite alternate',
+          animationPlayState: animState,
         }}
       />
       <div
@@ -36,8 +39,10 @@ export function AmbientBackground() {
           height: '60vw',
           background: `radial-gradient(circle, ${theme.accentGlow} 0%, transparent 60%)`,
           animation: 'ambientGlow 25s ease-in-out infinite alternate-reverse',
+          animationPlayState: animState,
         }}
       />
     </div>
   );
 }
+

@@ -44,6 +44,7 @@ function AppContent({ theme, themeKey, setThemeKey }) {
 
   const today = useMemo(() => getToday(), []);
   const modalHabit = habits.find((h) => h.id === modal.openHabitId) || null;
+  const isAnyModalOpen = isCreating || !!modalHabit;
 
   function handleToggleDay(habitId, dateKey) {
     const habit = habits.find((h) => h.id === habitId);
@@ -54,7 +55,7 @@ function AppContent({ theme, themeKey, setThemeKey }) {
 
   return (
     <>
-      <AmbientBackground />
+      <AmbientBackground paused={isAnyModalOpen} />
       <AppLayout activeSection={activeSection} onSectionChange={setActiveSection}>
         {/* ── Home ─────────────────────────────────────────────── */}
         {activeSection === 'home' && (

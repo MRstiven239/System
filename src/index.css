@@ -69,10 +69,17 @@ input[type=number] {
 /* Clases de utilidad para animaciones */
 .animate-fade-in-up {
   animation: fadeInUp var(--transition-slow) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--transition-normal) forwards;
+  will-change: opacity;
 }
 
 .animate-scale-in {
   animation: scaleIn var(--transition-normal) forwards;
+  will-change: transform, opacity;
 }
 
 /* Respetar prefers-reduced-motion */

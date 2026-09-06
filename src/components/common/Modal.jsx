@@ -7,7 +7,7 @@ export function Modal({ onClose, children }) {
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] overflow-y-auto p-4 sm:p-6 animate-fade-in"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'rgba(0,0,0,0.75)', willChange: 'opacity' }}
       onClick={onClose}
     >
       <div className="flex min-h-full items-center justify-center">
@@ -16,7 +16,8 @@ export function Modal({ onClose, children }) {
           style={{ 
             background: theme.surface, 
             border: `1px solid ${theme.border}`,
-            boxShadow: '0 24px 48px rgba(0,0,0,0.4)'
+            boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
+            willChange: 'transform, opacity',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -27,3 +28,4 @@ export function Modal({ onClose, children }) {
     document.body
   );
 }
+
