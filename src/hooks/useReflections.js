@@ -1,22 +1,53 @@
 import { useCallback } from 'react';
 import { usePersistedState } from './usePersistedState';
 import { createReflection } from '../domain/reflection';
+import { useAuth } from '../auth/AuthContext';
+import { saveReflection, deleteReflectionInCloud } from '../storage/supabaseRepository';
 
 export function useReflections() {
   const [reflections, setReflections, { loaded, saveError }] = usePersistedState('reflections-v1', []);
+  const { user } = useAuth();
 
-  const addReflection = useCallback((data) => {
-    // Add to the beginning of the list
-    setReflections(prev => [createReflection(data), ...prev]);
-  }, [setReflections]);
+  const addReflection = useCallback(
+    (data) => {
+      const newRef = createReflection(data);
+      setReflections((prev) => [newRef, ...prev]);
+      if (user) saveReflection(user.id, newRef).catch(console.error);
+    },
+    [setReflections, user]
+  );
 
-  const updateReflection = useCallback((id, updates) => {
-    setReflections(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
-  }, [setReflections]);
+  const updateReflection = useCallback(
+    (id, updates) => {
+      setReflections((prev) =>
+        prev.map((r) => {
+          if (r.id === id) {
+            const updated = { ...r, ...updates };
+            if (user) saveReflection(user.id, updated).catch(console.error);
+            return updated;
+          }
+          return r;
+        })
+      );
+    },
+    [setReflections, user]
+  );
 
-  const deleteReflection = useCallback((id) => {
-    setReflections(prev => prev.filter(r => r.id !== id));
-  }, [setReflections]);
+  const deleteReflection = useCallback(
+    (id) => {
+      setReflections((prev) => prev.filter((r) => r.id !== id));
+      if (user) deleteReflectionInCloud(user.id, id).catch(console.error);
+    },
+    [setReflections, user]
+  );
 
-  return { reflections, loaded, saveError, addReflection, updateReflection, deleteReflection };
+  return {
+    reflections,
+    setReflections,
+    loaded,
+    saveError,
+    addReflection,
+    updateReflection,
+    deleteReflection,
+  };
 }

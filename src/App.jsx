@@ -8,8 +8,10 @@ import { useHabitModal } from './hooks/useHabitModal';
 import { useGrowthPulse } from './hooks/useGrowthPulse';
 import { useGoals } from './hooks/useGoals';
 import { useReflections } from './hooks/useReflections';
+import { useCloudSync } from './hooks/useCloudSync';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import { AuthModal } from './components/auth/AuthModal';
 import { today as getToday } from './domain/dates';
-import { DANGER } from './theme/semanticColors';
 
 import { AppLayout } from './components/layout/AppLayout';
 import { AmbientBackground } from './components/common/AmbientBackground';
@@ -18,27 +20,30 @@ import { GoalsView } from './components/goals/GoalsView';
 import { ReflectionsView } from './components/reflections/ReflectionsView';
 import { SettingsView } from './components/settings/SettingsView';
 
-// Components for Garden (new)
 import { GardenView } from './components/garden/GardenView';
 import { Modal } from './components/common/Modal';
 import { HabitForm } from './components/habit-form/HabitForm';
 import { HabitModal } from './components/habit-modal/HabitModal';
-
-// Components for Budget (new)
 import { MoneyView } from './components/money/MoneyView';
 
-/**
- * The composition root.
- */
 function AppContent({ theme, themeKey, setThemeKey }) {
-  const { habits, loaded, saveError, addHabit, updateHabit, deleteHabit, toggleCompletion } = useHabits();
+  const { habits, setHabits, loaded, saveError, addHabit, updateHabit, deleteHabit, toggleCompletion } = useHabits();
   const budget = useBudget();
   const { range, setRange } = useCalendarNavigation('month');
   const modal = useHabitModal();
   const { bump, pulseKeyFor } = useGrowthPulse();
   const goalsData = useGoals();
   const reflectionsData = useReflections();
-  
+
+  // Cloud Realtime Synchronization Hook
+  useCloudSync({
+    habits, setHabits,
+    accounts: budget.accounts, setAccounts: budget.setAccounts,
+    transactions: budget.transactions, setTransactions: budget.setTransactions,
+    goals: goalsData.goals, setGoals: goalsData.setGoals,
+    reflections: reflectionsData.reflections, setReflections: reflectionsData.setReflections,
+  });
+
   const [isCreating, setIsCreating] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
 
@@ -132,7 +137,7 @@ function AppContent({ theme, themeKey, setThemeKey }) {
           <SettingsView themeKey={themeKey} setThemeKey={setThemeKey} />
         )}
 
-        {/* ── Garden modals (only relevant in garden tab) ──────────────── */}
+        {/* ── Garden modals ──────────────── */}
         {isCreating && (
           <Modal onClose={() => setIsCreating(false)}>
             <h3 style={{ fontFamily: 'Fraunces, serif', color: theme.ink }} className="text-lg font-semibold mb-4">
@@ -181,9 +186,10 @@ export default function App() {
   const { theme, themeKey, setThemeKey } = useThemeChoice();
 
   return (
-    <ThemeContext.Provider value={theme}>
-      <AppContent theme={theme} themeKey={themeKey} setThemeKey={setThemeKey} />
-    </ThemeContext.Provider>
+    <AuthProvider>
+      <ThemeContext.Provider value={theme}>
+        <AppContent theme={theme} themeKey={themeKey} setThemeKey={setThemeKey} />
+      </ThemeContext.Provider>
+    </AuthProvider>
   );
 }
-

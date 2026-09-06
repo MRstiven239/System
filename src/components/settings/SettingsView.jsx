@@ -3,11 +3,16 @@ import { useTheme } from '../../theme/ThemeContext';
 import { SectionHeader } from '../layout/SectionHeader';
 import { ThemePicker } from '../theme-picker/ThemePicker';
 import { exportAllData, importAllData } from '../../storage/indexedDBAdapter';
+import { useAuth } from '../../auth/AuthContext';
+import { AuthModal } from '../auth/AuthModal';
+import { Cloud, CloudOff, LogIn, LogOut, User, RefreshCw } from 'lucide-react';
 
 export function SettingsView({ themeKey, setThemeKey }) {
   const theme = useTheme();
+  const { user, signOut } = useAuth();
   const fileInputRef = useRef(null);
-  const [backupStatus, setBackupStatus] = useState(null); // { type: 'success'|'error', msg }
+  const [backupStatus, setBackupStatus] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // ── Export ──────────────────────────────────────────────────────
   async function handleExport() {
@@ -50,7 +55,6 @@ export function SettingsView({ themeKey, setThemeKey }) {
       setBackupStatus({ type: 'error', msg: '❌ El archivo no es un respaldo válido.' });
     }
 
-    // Reset file input so the same file can be re-selected.
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
@@ -71,6 +75,48 @@ export function SettingsView({ themeKey, setThemeKey }) {
       <SectionHeader title="Configuración" />
 
       <div className="flex flex-col gap-8">
+        {/* ── Cuentas y Sincronización en la Nube ────── */}
+        <section
+          className="p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4"
+          style={{ background: theme.cardBg, borderColor: theme.border }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              {user ? <Cloud className="w-6 h-6 text-purple-400" /> : <CloudOff className="w-6 h-6 text-slate-400" />}
+            </div>
+            <div>
+              <h3 style={{ color: theme.ink }} className="font-semibold text-base flex items-center gap-2">
+                {user ? 'Cuenta Sincronizada' : 'Sincronización en la Nube'}
+              </h3>
+              <p style={{ color: theme.inkMuted }} className="text-xs mt-0.5">
+                {user
+                  ? `Iniciado sesión como ${user.email}. Datos sincronizados en tiempo real.`
+                  : 'Modo local sin cuenta. Inicia sesión para sincronizar tu PC y celular.'}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            {user ? (
+              <button
+                onClick={signOut}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition"
+              >
+                <LogOut className="w-4 h-4" />
+                Cerrar sesión
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30 transition"
+              >
+                <LogIn className="w-4 h-4" />
+                Iniciar Sesión / Crear Cuenta
+              </button>
+            )}
+          </div>
+        </section>
+
         {/* ── Apariencia ──────────────────────────────── */}
         <section>
           <h3 style={{ color: theme.ink }} className="text-sm font-semibold mb-4">Apariencia</h3>
@@ -128,11 +174,12 @@ export function SettingsView({ themeKey, setThemeKey }) {
         <section>
           <h3 style={{ color: theme.ink }} className="text-sm font-semibold mb-4">Acerca de</h3>
           <p style={{ color: theme.inkMuted }} className="text-sm">
-            Esta es una aplicación personal 100% offline. Tus datos se guardan localmente en IndexedDB dentro de tu navegador.
+            Mi Vida — Sistema de Hábitos, Finanzas y Objetivos sincronizado con Supabase Realtime.
           </p>
         </section>
       </div>
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 }
-

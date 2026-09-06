@@ -1,33 +1,47 @@
 import { useCallback } from 'react';
 import { usePersistedState } from './usePersistedState';
 import { createHabit, toggleHabitCompletion } from '../domain/habit';
+import { useAuth } from '../auth/AuthContext';
+import { saveHabit, deleteHabitInCloud } from '../storage/supabaseRepository';
 
 const STORAGE_KEY = 'identity-habits-v1';
 
-/**
- * Owns the list of habits and every mutation on it (create, update,
- * delete, toggle a day). Components never mutate the habits array
- * themselves — they call these functions, keeping "how a habit
- * changes" in one place.
- */
 export function useHabits() {
   const [habits, setHabits, { loaded, saveError }] = usePersistedState(STORAGE_KEY, []);
+  const { user } = useAuth();
 
   const addHabit = useCallback((formData) => {
-    setHabits((prev) => [...prev, createHabit(formData)]);
-  }, [setHabits]);
+    const newHabit = createHabit(formData);
+    setHabits((prev) => [...prev, newHabit]);
+    if (user) saveHabit(user.id, newHabit).catch(console.error);
+  }, [setHabits, user]);
 
   const updateHabit = useCallback((id, formData) => {
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...formData } : h)));
-  }, [setHabits]);
+    setHabits((prev) => prev.map((h) => {
+      if (h.id === id) {
+        const updated = { ...h, ...formData };
+        if (user) saveHabit(user.id, updated).catch(console.error);
+        return updated;
+      }
+      return h;
+    }));
+  }, [setHabits, user]);
 
   const deleteHabit = useCallback((id) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
-  }, [setHabits]);
+    if (user) deleteHabitInCloud(user.id, id).catch(console.error);
+  }, [setHabits, user]);
 
   const toggleCompletion = useCallback((id, dateKey) => {
-    setHabits((prev) => prev.map((h) => (h.id === id ? toggleHabitCompletion(h, dateKey) : h)));
-  }, [setHabits]);
+    setHabits((prev) => prev.map((h) => {
+      if (h.id === id) {
+        const updated = toggleHabitCompletion(h, dateKey);
+        if (user) saveHabit(user.id, updated).catch(console.error);
+        return updated;
+      }
+      return h;
+    }));
+  }, [setHabits, user]);
 
-  return { habits, loaded, saveError, addHabit, updateHabit, deleteHabit, toggleCompletion };
+  return { habits, setHabits, loaded, saveError, addHabit, updateHabit, deleteHabit, toggleCompletion };
 }

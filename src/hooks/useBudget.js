@@ -6,21 +6,22 @@ import {
   createIncome,
   createTransfer,
 } from '../domain/budget';
+import { useAuth } from '../auth/AuthContext';
+import {
+  saveAccount, deleteAccountInCloud,
+  saveTransaction, deleteTransactionInCloud
+} from '../storage/supabaseRepository';
 
 const ACCOUNTS_KEY = 'budget-accounts-v1';
 const TRANSACTIONS_KEY = 'budget-transactions-v1';
 
-/**
- * Owns all budget state: accounts and transactions.
- * Follows the exact same pattern as useHabits — components never mutate
- * data directly, they call these functions.
- */
 export function useBudget() {
   const [accounts, setAccounts, { loaded: accountsLoaded }] = usePersistedState(ACCOUNTS_KEY, []);
   const [transactions, setTransactions, { loaded: txLoaded, saveError }] = usePersistedState(
     TRANSACTIONS_KEY,
     []
   );
+  const { user } = useAuth();
 
   const loaded = accountsLoaded && txLoaded;
 
@@ -28,60 +29,86 @@ export function useBudget() {
 
   const addAccount = useCallback(
     (formData) => {
-      setAccounts((prev) => [...prev, createAccount(formData)]);
+      const newAcc = createAccount(formData);
+      setAccounts((prev) => [...prev, newAcc]);
+      if (user) saveAccount(user.id, newAcc).catch(console.error);
     },
-    [setAccounts]
+    [setAccounts, user]
   );
 
   const updateAccount = useCallback(
     (id, formData) => {
       setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === id ? { ...a, ...formData, initialBalance: Number(formData.balance) ?? a.initialBalance } : a
-        )
+        prev.map((a) => {
+          if (a.id === id) {
+            const updated = {
+              ...a,
+              ...formData,
+              initialBalance: Number(formData.balance) ?? a.initialBalance,
+            };
+            if (user) saveAccount(user.id, updated).catch(console.error);
+            return updated;
+          }
+          return a;
+        })
       );
     },
-    [setAccounts]
+    [setAccounts, user]
   );
 
   const deleteAccount = useCallback(
     (id) => {
       setAccounts((prev) => prev.filter((a) => a.id !== id));
-      // Also remove transactions tied to this account
       setTransactions((prev) =>
         prev.filter((tx) => tx.accountId !== id && tx.toAccountId !== id)
       );
+      if (user) deleteAccountInCloud(user.id, id).catch(console.error);
     },
-    [setAccounts, setTransactions]
+    [setAccounts, setTransactions, user]
   );
 
   // ─── Transactions ───────────────────────────────────────────────────────────
 
-  const addExpense = useCallback((data) => {
-    setTransactions((prev) => [...prev, createExpense(data.name, data.amount, data.accountId, data.category)]);
-  }, [setTransactions]);
+  const addExpense = useCallback(
+    (data) => {
+      const newTx = createExpense(data.name, data.amount, data.accountId, data.category);
+      setTransactions((prev) => [...prev, newTx]);
+      if (user) saveTransaction(user.id, newTx).catch(console.error);
+    },
+    [setTransactions, user]
+  );
 
-  const addIncome = useCallback((data) => {
-    setTransactions((prev) => [...prev, createIncome(data.name, data.amount, data.accountId, data.category)]);
-  }, [setTransactions]);
+  const addIncome = useCallback(
+    (data) => {
+      const newTx = createIncome(data.name, data.amount, data.accountId, data.category);
+      setTransactions((prev) => [...prev, newTx]);
+      if (user) saveTransaction(user.id, newTx).catch(console.error);
+    },
+    [setTransactions, user]
+  );
 
   const addTransfer = useCallback(
     (formData) => {
-      setTransactions((prev) => [...prev, createTransfer(formData)]);
+      const newTx = createTransfer(formData);
+      setTransactions((prev) => [...prev, newTx]);
+      if (user) saveTransaction(user.id, newTx).catch(console.error);
     },
-    [setTransactions]
+    [setTransactions, user]
   );
 
   const deleteTransaction = useCallback(
     (id) => {
       setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+      if (user) deleteTransactionInCloud(user.id, id).catch(console.error);
     },
-    [setTransactions]
+    [setTransactions, user]
   );
 
   return {
     accounts,
+    setAccounts,
     transactions,
+    setTransactions,
     loaded,
     saveError,
     addAccount,
