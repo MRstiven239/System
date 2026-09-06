@@ -1,0 +1,10 @@
+@keyframes growthPulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.growth-illustration-pulse {
+  animation: growthPulse 420ms ease-out;
+  transform-origin: center;
+}
