@@ -1,5 +1,19 @@
 import { supabase } from '../lib/supabase';
 
+function isUUID(id) {
+  return typeof id === 'string' && id.length === 36 && id.includes('-');
+}
+
+function ensureUUID(id) {
+  if (isUUID(id)) return id;
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // ─── HABITS ───────────────────────────────────────────────────────────────────
 
 export async function fetchHabits(userId) {
@@ -36,9 +50,10 @@ export async function fetchHabits(userId) {
 }
 
 export async function saveHabit(userId, habit) {
-  const isUUID = habit.id && habit.id.length === 36 && habit.id.includes('-');
+  const habitId = ensureUUID(habit.id);
   
   const habitPayload = {
+    id: habitId,
     user_id: userId,
     name: habit.name,
     identity: habit.identity || null,
@@ -52,10 +67,6 @@ export async function saveHabit(userId, habit) {
     habitPayload.times_per_week = habit.frequency.timesPerWeek;
   }
 
-  if (isUUID) {
-    habitPayload.id = habit.id;
-  }
-
   const { data, error } = await supabase
     .from('habits')
     .upsert(habitPayload)
@@ -67,13 +78,13 @@ export async function saveHabit(userId, habit) {
     throw error;
   }
 
-  const habitId = data.id;
+  const finalId = data.id;
 
   // Handle frequency days
   if (habit.frequency?.type === 'days') {
-    await supabase.from('habit_frequency_days').delete().eq('habit_id', habitId);
+    await supabase.from('habit_frequency_days').delete().eq('habit_id', finalId);
     const dayRows = (habit.frequency.days || []).map((d) => ({
-      habit_id: habitId,
+      habit_id: finalId,
       day_of_week: d,
     }));
     if (dayRows.length > 0) {
@@ -82,16 +93,16 @@ export async function saveHabit(userId, habit) {
   }
 
   // Handle completions
-  await supabase.from('habit_completions').delete().eq('habit_id', habitId);
+  await supabase.from('habit_completions').delete().eq('habit_id', finalId);
   const completionRows = (habit.completions || []).map((key) => ({
-    habit_id: habitId,
+    habit_id: finalId,
     date_key: key,
   }));
   if (completionRows.length > 0) {
     await supabase.from('habit_completions').insert(completionRows);
   }
 
-  return { ...habit, id: habitId };
+  return { ...habit, id: finalId };
 }
 
 export async function deleteHabitInCloud(userId, habitId) {
@@ -114,14 +125,14 @@ export async function fetchAccounts(userId) {
 }
 
 export async function saveAccount(userId, account) {
-  const isUUID = account.id && account.id.length === 36 && account.id.includes('-');
+  const accountId = ensureUUID(account.id);
   const payload = {
+    id: accountId,
     user_id: userId,
     name: account.name,
     emoji: account.emoji,
     initial_balance: account.initialBalance || 0,
   };
-  if (isUUID) payload.id = account.id;
 
   const { data, error } = await supabase.from('accounts').upsert(payload).select().single();
   if (error) throw error;
@@ -159,8 +170,9 @@ export async function fetchTransactions(userId) {
 }
 
 export async function saveTransaction(userId, tx) {
-  const isUUID = tx.id && tx.id.length === 36 && tx.id.includes('-');
+  const txId = ensureUUID(tx.id);
   const payload = {
+    id: txId,
     user_id: userId,
     type: tx.type,
     amount: tx.amount,
@@ -168,11 +180,10 @@ export async function saveTransaction(userId, tx) {
     category: tx.category || null,
     description: tx.description || null,
     date: tx.date || Date.now(),
-    account_id: tx.accountId || null,
-    from_account_id: tx.fromAccountId || null,
-    to_account_id: tx.toAccountId || null,
+    account_id: isUUID(tx.accountId) ? tx.accountId : null,
+    from_account_id: isUUID(tx.fromAccountId) ? tx.fromAccountId : null,
+    to_account_id: isUUID(tx.toAccountId) ? tx.toAccountId : null,
   };
-  if (isUUID) payload.id = tx.id;
 
   const { data, error } = await supabase.from('transactions').upsert(payload).select().single();
   if (error) throw error;
@@ -225,8 +236,9 @@ export async function fetchGoals(userId) {
 }
 
 export async function saveGoal(userId, goal) {
-  const isUUID = goal.id && goal.id.length === 36 && goal.id.includes('-');
+  const goalId = ensureUUID(goal.id);
   const payload = {
+    id: goalId,
     user_id: userId,
     name: goal.name,
     icon: goal.icon,
@@ -238,36 +250,31 @@ export async function saveGoal(userId, goal) {
     target_amount: goal.targetAmount || null,
     target_unit: goal.targetUnit || null,
     current_amount: goal.currentAmount || 0,
-    linked_account_id: goal.linkedAccountId || null,
+    linked_account_id: isUUID(goal.linkedAccountId) ? goal.linkedAccountId : null,
     completed_at: goal.completedAt ? new Date(goal.completedAt).toISOString() : null,
   };
-  if (isUUID) payload.id = goal.id;
 
   const { data, error } = await supabase.from('goals').upsert(payload).select().single();
   if (error) throw error;
-  const goalId = data.id;
+  const finalGoalId = data.id;
 
   // Sync checklist items
-  await supabase.from('goal_checklist_items').delete().eq('goal_id', goalId);
-  const checklistRows = (goal.checklistItems || []).map((item, idx) => {
-    const isItemUUID = item.id && item.id.length === 36 && item.id.includes('-');
-    const row = {
-      goal_id: goalId,
-      text: item.text,
-      is_done: !!item.done,
-      sort_order: idx,
-    };
-    if (isItemUUID) row.id = item.id;
-    return row;
-  });
+  await supabase.from('goal_checklist_items').delete().eq('goal_id', finalGoalId);
+  const checklistRows = (goal.checklistItems || []).map((item, idx) => ({
+    id: ensureUUID(item.id),
+    goal_id: finalGoalId,
+    text: item.text,
+    is_done: !!item.done,
+    sort_order: idx,
+  }));
   if (checklistRows.length > 0) {
     await supabase.from('goal_checklist_items').insert(checklistRows);
   }
 
   // Sync linked habits
-  await supabase.from('goal_linked_habits').delete().eq('goal_id', goalId);
-  const linkedHabitRows = (goal.linkedHabits || []).map((lh) => ({
-    goal_id: goalId,
+  await supabase.from('goal_linked_habits').delete().eq('goal_id', finalGoalId);
+  const linkedHabitRows = (goal.linkedHabits || []).filter((lh) => isUUID(lh.habitId)).map((lh) => ({
+    goal_id: finalGoalId,
     habit_id: lh.habitId,
     weight: lh.weight || 1,
   }));
@@ -275,7 +282,7 @@ export async function saveGoal(userId, goal) {
     await supabase.from('goal_linked_habits').insert(linkedHabitRows);
   }
 
-  return { ...goal, id: goalId };
+  return { ...goal, id: finalGoalId };
 }
 
 export async function deleteGoalInCloud(userId, goalId) {
@@ -300,12 +307,12 @@ export async function fetchReflections(userId) {
 }
 
 export async function saveReflection(userId, reflection) {
-  const isUUID = reflection.id && reflection.id.length === 36 && reflection.id.includes('-');
+  const reflectionId = ensureUUID(reflection.id);
   const payload = {
+    id: reflectionId,
     user_id: userId,
     content: reflection.text,
   };
-  if (isUUID) payload.id = reflection.id;
 
   const { data, error } = await supabase.from('reflections').upsert(payload).select().single();
   if (error) throw error;
@@ -334,8 +341,9 @@ export async function fetchRecurringTemplates(userId) {
 }
 
 export async function saveRecurringTemplate(userId, template) {
-  const isUUID = template.id && template.id.length === 36 && template.id.includes('-');
+  const templateId = ensureUUID(template.id);
   const payload = {
+    id: templateId,
     user_id: userId,
     name: template.name,
     type: template.type,
@@ -343,9 +351,8 @@ export async function saveRecurringTemplate(userId, template) {
     icon: template.icon || null,
     category: template.category || null,
     day_of_month: template.dayOfMonth || null,
-    default_account_id: template.defaultAccountId || null,
+    default_account_id: isUUID(template.defaultAccountId) ? template.defaultAccountId : null,
   };
-  if (isUUID) payload.id = template.id;
 
   const { data, error } = await supabase.from('recurring_templates').upsert(payload).select().single();
   if (error) throw error;
