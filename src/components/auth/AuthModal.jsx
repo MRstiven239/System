@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { useAuth } from '../../auth/AuthContext';
-import { LogIn, UserPlus, Sparkles, Mail, Lock, AlertCircle } from 'lucide-react';
+import { LogIn, UserPlus, Sparkles, Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function AuthModal({ isOpen, onClose }) {
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
@@ -9,24 +9,48 @@ export function AuthModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
+  const translateError = (errMessage) => {
+    if (!errMessage) return 'Ocurrió un error al autenticar';
+    if (errMessage.includes('Failed to fetch')) {
+      return 'No se pudo conectar con Supabase. Reinicia el servidor local o recarga la página.';
+    }
+    if (errMessage.includes('User already registered')) {
+      return 'Este correo ya está registrado. Haz clic abajo en "Inicia sesión aquí".';
+    }
+    if (errMessage.includes('Invalid login credentials')) {
+      return 'Correo o contraseña incorrectos.';
+    }
+    if (errMessage.includes('Password should be at least')) {
+      return 'La contraseña debe tener al menos 6 caracteres.';
+    }
+    return errMessage;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setLoading(true);
     try {
       if (isSignUp) {
-        await signUpWithEmail(email, password);
-        alert('¡Cuenta creada! Si el correo requiere verificación, revisa tu bandeja de entrada.');
+        const data = await signUpWithEmail(email, password);
+        if (data?.user && data?.session === null) {
+          setSuccessMsg('¡Cuenta creada con éxito! Revisa tu correo para confirmar la cuenta o intenta iniciar sesión.');
+        } else {
+          setSuccessMsg('¡Cuenta creada e iniciada con éxito!');
+          setTimeout(() => onClose(), 1500);
+        }
       } else {
         await signInWithEmail(email, password);
+        onClose();
       }
-      onClose();
     } catch (err) {
-      setError(err.message || 'Error al autenticar');
+      setError(translateError(err.message));
     } finally {
       setLoading(false);
     }
@@ -34,10 +58,11 @@ export function AuthModal({ isOpen, onClose }) {
 
   const handleGoogleSignIn = async () => {
     setError('');
+    setSuccessMsg('');
     try {
       await signInWithGoogle();
     } catch (err) {
-      setError(err.message || 'Error al iniciar sesión con Google');
+      setError(translateError(err.message));
     }
   };
 
@@ -64,11 +89,18 @@ export function AuthModal({ isOpen, onClose }) {
           </div>
         )}
 
+        {successMsg && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
         {/* Google OAuth Button */}
         <button
           onClick={handleGoogleSignIn}
           type="button"
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 active:scale-[0.98] transition shadow-md"
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white text-slate-900 font-medium hover:bg-slate-100 active:scale-[0.98] transition shadow-md cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -134,7 +166,7 @@ export function AuthModal({ isOpen, onClose }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium active:scale-[0.98] transition flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium active:scale-[0.98] transition flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 disabled:opacity-50 cursor-pointer"
           >
             {isSignUp ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
             {loading ? 'Cargando...' : isSignUp ? 'Registrarse' : 'Iniciar Sesión'}
@@ -148,8 +180,8 @@ export function AuthModal({ isOpen, onClose }) {
               ¿Ya tienes cuenta?{' '}
               <button
                 type="button"
-                onClick={() => setIsSignUp(false)}
-                className="text-purple-400 hover:underline font-medium ml-1"
+                onClick={() => { setIsSignUp(false); setError(''); setSuccessMsg(''); }}
+                className="text-purple-400 hover:underline font-medium ml-1 cursor-pointer"
               >
                 Inicia sesión aquí
               </button>
@@ -159,8 +191,8 @@ export function AuthModal({ isOpen, onClose }) {
               ¿No tienes cuenta?{' '}
               <button
                 type="button"
-                onClick={() => setIsSignUp(true)}
-                className="text-purple-400 hover:underline font-medium ml-1"
+                onClick={() => { setIsSignUp(true); setError(''); setSuccessMsg(''); }}
+                className="text-purple-400 hover:underline font-medium ml-1 cursor-pointer"
               >
                 Regístrate gratis
               </button>
