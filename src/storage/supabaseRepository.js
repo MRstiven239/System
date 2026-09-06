@@ -36,7 +36,7 @@ export async function fetchHabits(userId) {
 }
 
 export async function saveHabit(userId, habit) {
-  const isUUID = habit.id.length === 36 && habit.id.includes('-');
+  const isUUID = habit.id && habit.id.length === 36 && habit.id.includes('-');
   
   const habitPayload = {
     user_id: userId,
@@ -44,10 +44,13 @@ export async function saveHabit(userId, habit) {
     identity: habit.identity || null,
     icon: habit.icon,
     color: habit.color,
-    freq_type: habit.frequency.type,
-    times_per_week: habit.frequency.type === 'weekly' ? habit.frequency.timesPerWeek : null,
+    freq_type: habit.frequency?.type || 'daily',
     start_date: habit.startDate || new Date().toISOString().split('T')[0],
   };
+
+  if (habit.frequency?.type === 'weekly' && habit.frequency?.timesPerWeek) {
+    habitPayload.times_per_week = habit.frequency.timesPerWeek;
+  }
 
   if (isUUID) {
     habitPayload.id = habit.id;
@@ -67,7 +70,7 @@ export async function saveHabit(userId, habit) {
   const habitId = data.id;
 
   // Handle frequency days
-  if (habit.frequency.type === 'days') {
+  if (habit.frequency?.type === 'days') {
     await supabase.from('habit_frequency_days').delete().eq('habit_id', habitId);
     const dayRows = (habit.frequency.days || []).map((d) => ({
       habit_id: habitId,
@@ -111,7 +114,7 @@ export async function fetchAccounts(userId) {
 }
 
 export async function saveAccount(userId, account) {
-  const isUUID = account.id.length === 36 && account.id.includes('-');
+  const isUUID = account.id && account.id.length === 36 && account.id.includes('-');
   const payload = {
     user_id: userId,
     name: account.name,
@@ -156,7 +159,7 @@ export async function fetchTransactions(userId) {
 }
 
 export async function saveTransaction(userId, tx) {
-  const isUUID = tx.id.length === 36 && tx.id.includes('-');
+  const isUUID = tx.id && tx.id.length === 36 && tx.id.includes('-');
   const payload = {
     user_id: userId,
     type: tx.type,
@@ -222,7 +225,7 @@ export async function fetchGoals(userId) {
 }
 
 export async function saveGoal(userId, goal) {
-  const isUUID = goal.id.length === 36 && goal.id.includes('-');
+  const isUUID = goal.id && goal.id.length === 36 && goal.id.includes('-');
   const payload = {
     user_id: userId,
     name: goal.name,
@@ -297,7 +300,7 @@ export async function fetchReflections(userId) {
 }
 
 export async function saveReflection(userId, reflection) {
-  const isUUID = reflection.id.length === 36 && reflection.id.includes('-');
+  const isUUID = reflection.id && reflection.id.length === 36 && reflection.id.includes('-');
   const payload = {
     user_id: userId,
     content: reflection.text,
@@ -331,7 +334,7 @@ export async function fetchRecurringTemplates(userId) {
 }
 
 export async function saveRecurringTemplate(userId, template) {
-  const isUUID = template.id.length === 36 && template.id.includes('-');
+  const isUUID = template.id && template.id.length === 36 && template.id.includes('-');
   const payload = {
     user_id: userId,
     name: template.name,
