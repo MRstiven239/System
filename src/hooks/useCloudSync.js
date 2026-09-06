@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { supabase } from '../lib/supabase';
 import { storageAdapter } from '../storage';
@@ -20,14 +20,17 @@ export function useCloudSync({
   recurringTemplates, setRecurringTemplates
 }) {
   const { user } = useAuth();
+  const isMigratingRef = useRef(false);
 
   // 1. Initial Load & Auto Migration from Local to Cloud
   useEffect(() => {
-    if (!user) return;
+    if (!user || isMigratingRef.current) return;
     let isCancelled = false;
 
     async function syncOnLogin() {
       try {
+        isMigratingRef.current = true;
+
         // Fetch existing cloud data
         const [
           cloudHabits,
@@ -53,20 +56,20 @@ export function useCloudSync({
           cloudGoals.length === 0;
 
         if (isCloudEmpty) {
-          // Check if local storage/IndexedDB has existing user data
+          // Check current memory state & IndexedDB / localStorage for local data to upload
           const rawHabits = await storageAdapter.getItem('identity-habits-v1');
           const rawAccounts = await storageAdapter.getItem('budget-accounts-v1');
           const rawTxs = await storageAdapter.getItem('budget-transactions-v1');
-          const rawGoals = await storageAdapter.getItem('goals-v1');
+          const rawGoals = (await storageAdapter.getItem('goals-v2')) || (await storageAdapter.getItem('goals-v1'));
           const rawReflections = await storageAdapter.getItem('reflections-v1');
           const rawTemplates = await storageAdapter.getItem('recurring-templates-v1');
 
-          const localHabits = rawHabits ? JSON.parse(rawHabits) : [];
-          const localAccounts = rawAccounts ? JSON.parse(rawAccounts) : [];
-          const localTxs = rawTxs ? JSON.parse(rawTxs) : [];
-          const localGoals = rawGoals ? JSON.parse(rawGoals) : [];
-          const localReflections = rawReflections ? JSON.parse(rawReflections) : [];
-          const localTemplates = rawTemplates ? JSON.parse(rawTemplates) : [];
+          const localHabits = rawHabits ? JSON.parse(rawHabits) : (habits || []);
+          const localAccounts = rawAccounts ? JSON.parse(rawAccounts) : (accounts || []);
+          const localTxs = rawTxs ? JSON.parse(rawTxs) : (transactions || []);
+          const localGoals = rawGoals ? JSON.parse(rawGoals) : (goals || []);
+          const localReflections = rawReflections ? JSON.parse(rawReflections) : (reflections || []);
+          const localTemplates = rawTemplates ? JSON.parse(rawTemplates) : (recurringTemplates || []);
 
           const hasLocalData =
             localHabits.length > 0 ||
@@ -74,9 +77,7 @@ export function useCloudSync({
             localGoals.length > 0;
 
           if (hasLocalData) {
-            // Migrate local data to Supabase!
-            console.log('Migrando datos locales a Supabase para el usuario:', user.email);
-            
+            console.log('Subiendo datos locales a Supabase para:', user.email);
             for (const h of localHabits) await saveHabit(user.id, h);
             for (const a of localAccounts) await saveAccount(user.id, a);
             for (const t of localTxs) await saveTransaction(user.id, t);
@@ -84,7 +85,6 @@ export function useCloudSync({
             for (const r of localReflections) await saveReflection(user.id, r);
             for (const tm of localTemplates) await saveRecurringTemplate(user.id, tm);
 
-            // Re-fetch migrated cloud data
             const [
               migratedHabits,
               migratedAccounts,
@@ -101,25 +101,27 @@ export function useCloudSync({
               fetchRecurringTemplates(user.id)
             ]);
 
-            if (setHabits) setHabits(migratedHabits);
-            if (setAccounts) setAccounts(migratedAccounts);
-            if (setTransactions) setTransactions(migratedTxs);
-            if (setGoals) setGoals(migratedGoals);
-            if (setReflections) setReflections(migratedReflections);
-            if (setRecurringTemplates) setRecurringTemplates(migratedTemplates);
+            if (setHabits && migratedHabits.length > 0) setHabits(migratedHabits);
+            if (setAccounts && migratedAccounts.length > 0) setAccounts(migratedAccounts);
+            if (setTransactions && migratedTxs.length > 0) setTransactions(migratedTxs);
+            if (setGoals && migratedGoals.length > 0) setGoals(migratedGoals);
+            if (setReflections && migratedReflections.length > 0) setReflections(migratedReflections);
+            if (setRecurringTemplates && migratedTemplates.length > 0) setRecurringTemplates(migratedTemplates);
             return;
           }
         }
 
-        // Set state with cloud data
-        if (setHabits) setHabits(cloudHabits);
-        if (setAccounts) setAccounts(cloudAccounts);
-        if (setTransactions) setTransactions(cloudTxs);
-        if (setGoals) setGoals(cloudGoals);
-        if (setReflections) setReflections(cloudReflections);
-        if (setRecurringTemplates) setRecurringTemplates(cloudTemplates);
+        // Only update local state if cloud returned actual data
+        if (cloudHabits.length > 0 && setHabits) setHabits(cloudHabits);
+        if (cloudAccounts.length > 0 && setAccounts) setAccounts(cloudAccounts);
+        if (cloudTxs.length > 0 && setTransactions) setTransactions(cloudTxs);
+        if (cloudGoals.length > 0 && setGoals) setGoals(cloudGoals);
+        if (cloudReflections.length > 0 && setReflections) setReflections(cloudReflections);
+        if (cloudTemplates.length > 0 && setRecurringTemplates) setRecurringTemplates(cloudTemplates);
       } catch (err) {
         console.error('Error al sincronizar con Supabase:', err);
+      } finally {
+        isMigratingRef.current = false;
       }
     }
 
@@ -137,7 +139,6 @@ export function useCloudSync({
     const channel = supabase
       .channel(`realtime-sync-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', filter: `user_id=eq.${user.id}` }, async () => {
-        // When any table changes, pull updated records in realtime!
         try {
           const [
             freshHabits,
