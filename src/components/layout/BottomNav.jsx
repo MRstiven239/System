@@ -1,5 +1,5 @@
 import { useTheme } from '../../theme/ThemeContext';
-import { Home, Sprout, Wallet, Target, BookOpen } from 'lucide-react';
+import { Home, Sprout, Wallet, Target, BookOpen, Settings } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Inicio', icon: Home },
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'money', label: 'Dinero', icon: Wallet },
   { id: 'goals', label: 'Objetivos', icon: Target },
   { id: 'reflections', label: 'Reflexión', icon: BookOpen },
+  { id: 'settings', label: 'Ajustes', icon: Settings },
 ];
 
 export function BottomNav({ activeSection, onSectionChange }) {
@@ -22,7 +23,7 @@ export function BottomNav({ activeSection, onSectionChange }) {
         width: '100%',
         background: theme.surface,
         borderTop: `1px solid ${theme.border}`,
-        padding: '12px 8px calc(12px + env(safe-area-inset-bottom)) 8px',
+        padding: '8px 4px calc(8px + env(safe-area-inset-bottom)) 4px',
         zIndex: 50,
       }}
     >
@@ -36,27 +37,27 @@ export function BottomNav({ activeSection, onSectionChange }) {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px',
+              gap: '2px',
               border: 'none',
               background: 'transparent',
               color: isActive ? theme.accent : theme.inkMuted,
-              padding: '8px',
-              minWidth: '60px',
+              padding: '6px 4px',
+              flex: 1,
               cursor: 'pointer',
               transition: 'color var(--transition-fast)',
             }}
           >
             <div 
               style={{ 
-                padding: '4px 12px',
+                padding: '4px 10px',
                 borderRadius: '16px',
                 background: isActive ? theme.accentMuted : 'transparent',
                 transition: 'background var(--transition-fast)',
               }}
             >
-              <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+              <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
             </div>
-            <span style={{ fontSize: '10px', fontWeight: isActive ? 600 : 500 }}>
+            <span style={{ fontSize: '9px', fontWeight: isActive ? 600 : 500 }}>
               {item.label}
             </span>
           </button>
