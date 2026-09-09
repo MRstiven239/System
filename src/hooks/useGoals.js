@@ -12,7 +12,7 @@ export function useGoals() {
     (data) => {
       const newGoal = createGoal(data);
       setGoals((prev) => [...prev, newGoal]);
-      if (user) saveGoal(user.id, newGoal).catch(console.error);
+      if (user) saveGoal(user.id, newGoal).catch(e => alert('Error saving goal: ' + e.message));
     },
     [setGoals, user]
   );
@@ -36,7 +36,7 @@ export function useGoals() {
   const deleteGoal = useCallback(
     (id) => {
       setGoals((prev) => prev.filter((g) => g.id !== id));
-      if (user) deleteGoalInCloud(user.id, id).catch(console.error);
+      if (user) deleteGoalInCloud(user.id, id).catch(e => alert('Error deleting goal: ' + e.message));
     },
     [setGoals, user]
   );

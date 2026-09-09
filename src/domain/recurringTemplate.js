@@ -1,7 +1,14 @@
 // RecurringTemplate domain — pure functions
 
-function makeIdSimple() {
-  return Math.random().toString(36).substring(2, 9);
+function makeId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 export function createRecurringTemplate({
@@ -12,16 +19,19 @@ export function createRecurringTemplate({
   category,    // string opcional
   dayOfMonth,  // número opcional (1-31)
   accountId,   // cuenta predeterminada opcional
+  defaultAccountId,
 }) {
+  const accId = accountId || defaultAccountId || null;
   return {
-    id: makeIdSimple(),
+    id: makeId(),
     name,
     type,
     amount: Math.abs(Number(amount)),
     icon: icon || (type === 'expense' ? '💸' : '💚'),
     category: category || '',
     dayOfMonth: dayOfMonth ? Number(dayOfMonth) : null,
-    accountId: accountId || null,
+    accountId: accId,
+    defaultAccountId: accId,
     createdAt: Date.now(),
   };
 }

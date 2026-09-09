@@ -12,7 +12,7 @@ export function useReflections() {
     (data) => {
       const newRef = createReflection(data);
       setReflections((prev) => [newRef, ...prev]);
-      if (user) saveReflection(user.id, newRef).catch(console.error);
+      if (user) saveReflection(user.id, newRef).catch(e => alert('Error saving reflection: ' + e.message));
     },
     [setReflections, user]
   );
@@ -23,7 +23,7 @@ export function useReflections() {
         prev.map((r) => {
           if (r.id === id) {
             const updated = { ...r, ...updates };
-            if (user) saveReflection(user.id, updated).catch(console.error);
+            if (user) saveReflection(user.id, updated).catch(e => alert('Error updating reflection: ' + e.message));
             return updated;
           }
           return r;
@@ -36,7 +36,7 @@ export function useReflections() {
   const deleteReflection = useCallback(
     (id) => {
       setReflections((prev) => prev.filter((r) => r.id !== id));
-      if (user) deleteReflectionInCloud(user.id, id).catch(console.error);
+      if (user) deleteReflectionInCloud(user.id, id).catch(e => alert('Error deleting reflection: ' + e.message));
     },
     [setReflections, user]
   );

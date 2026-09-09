@@ -101,25 +101,29 @@ export function useCloudSync({
               fetchRecurringTemplates(user.id)
             ]);
 
-            if (setHabits && migratedHabits.length > 0) setHabits(migratedHabits);
-            if (setAccounts && migratedAccounts.length > 0) setAccounts(migratedAccounts);
-            if (setTransactions && migratedTxs.length > 0) setTransactions(migratedTxs);
-            if (setGoals && migratedGoals.length > 0) setGoals(migratedGoals);
-            if (setReflections && migratedReflections.length > 0) setReflections(migratedReflections);
-            if (setRecurringTemplates && migratedTemplates.length > 0) setRecurringTemplates(migratedTemplates);
+            if (setHabits) setHabits(migratedHabits);
+            if (setAccounts) setAccounts(migratedAccounts);
+            if (setTransactions) setTransactions(migratedTxs);
+            if (setGoals) setGoals(migratedGoals);
+            if (setReflections) setReflections(migratedReflections);
+            if (setRecurringTemplates) setRecurringTemplates(migratedTemplates);
             return;
           }
         }
 
-        // Only update local state if cloud returned actual data
-        if (cloudHabits.length > 0 && setHabits) setHabits(cloudHabits);
-        if (cloudAccounts.length > 0 && setAccounts) setAccounts(cloudAccounts);
-        if (cloudTxs.length > 0 && setTransactions) setTransactions(cloudTxs);
-        if (cloudGoals.length > 0 && setGoals) setGoals(cloudGoals);
-        if (cloudReflections.length > 0 && setReflections) setReflections(cloudReflections);
-        if (cloudTemplates.length > 0 && setRecurringTemplates) setRecurringTemplates(cloudTemplates);
+        // Supabase is the single source of truth when logged in
+        if (setHabits) setHabits(cloudHabits);
+        if (setAccounts) setAccounts(cloudAccounts);
+        if (setTransactions) setTransactions(cloudTxs);
+        if (setGoals) setGoals(cloudGoals);
+        if (setReflections) setReflections(cloudReflections);
+        if (setRecurringTemplates) setRecurringTemplates(cloudTemplates);
       } catch (err) {
         console.error('Error al sincronizar con Supabase:', err);
+        // Expose error visually for debugging
+        if (typeof window !== 'undefined') {
+          setTimeout(() => alert('SYNC ERROR: ' + err.message + ' ' + JSON.stringify(err)), 1000);
+        }
       } finally {
         isMigratingRef.current = false;
       }
@@ -138,8 +142,9 @@ export function useCloudSync({
 
     const channel = supabase
       .channel(`realtime-sync-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', filter: `user_id=eq.${user.id}` }, async () => {
+      .on('postgres_changes', { event: '*', schema: 'public' }, async (payload) => {
         try {
+          console.log('Realtime change received:', payload);
           const [
             freshHabits,
             freshAccounts,

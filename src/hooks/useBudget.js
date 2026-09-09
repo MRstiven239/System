@@ -31,7 +31,7 @@ export function useBudget() {
     (formData) => {
       const newAcc = createAccount(formData);
       setAccounts((prev) => [...prev, newAcc]);
-      if (user) saveAccount(user.id, newAcc).catch(console.error);
+      if (user) saveAccount(user.id, newAcc).catch(e => alert('Error saving account: ' + e.message));
     },
     [setAccounts, user]
   );
@@ -46,7 +46,7 @@ export function useBudget() {
               ...formData,
               initialBalance: Number(formData.balance) ?? a.initialBalance,
             };
-            if (user) saveAccount(user.id, updated).catch(console.error);
+            if (user) saveAccount(user.id, updated).catch(e => alert('Error updating account: ' + e.message));
             return updated;
           }
           return a;
@@ -62,7 +62,7 @@ export function useBudget() {
       setTransactions((prev) =>
         prev.filter((tx) => tx.accountId !== id && tx.toAccountId !== id)
       );
-      if (user) deleteAccountInCloud(user.id, id).catch(console.error);
+      if (user) deleteAccountInCloud(user.id, id).catch(e => alert('Error deleting account: ' + e.message));
     },
     [setAccounts, setTransactions, user]
   );
@@ -73,7 +73,7 @@ export function useBudget() {
     (data) => {
       const newTx = createExpense(data.name, data.amount, data.accountId, data.category);
       setTransactions((prev) => [...prev, newTx]);
-      if (user) saveTransaction(user.id, newTx).catch(console.error);
+      if (user) saveTransaction(user.id, newTx).catch(e => alert('Error saving expense: ' + e.message));
     },
     [setTransactions, user]
   );
@@ -82,7 +82,7 @@ export function useBudget() {
     (data) => {
       const newTx = createIncome(data.name, data.amount, data.accountId, data.category);
       setTransactions((prev) => [...prev, newTx]);
-      if (user) saveTransaction(user.id, newTx).catch(console.error);
+      if (user) saveTransaction(user.id, newTx).catch(e => alert('Error saving income: ' + e.message));
     },
     [setTransactions, user]
   );
@@ -91,7 +91,7 @@ export function useBudget() {
     (formData) => {
       const newTx = createTransfer(formData);
       setTransactions((prev) => [...prev, newTx]);
-      if (user) saveTransaction(user.id, newTx).catch(console.error);
+      if (user) saveTransaction(user.id, newTx).catch(e => alert('Error saving transfer: ' + e.message));
     },
     [setTransactions, user]
   );
@@ -99,7 +99,7 @@ export function useBudget() {
   const deleteTransaction = useCallback(
     (id) => {
       setTransactions((prev) => prev.filter((tx) => tx.id !== id));
-      if (user) deleteTransactionInCloud(user.id, id).catch(console.error);
+      if (user) deleteTransactionInCloud(user.id, id).catch(e => alert('Error deleting transaction: ' + e.message));
     },
     [setTransactions, user]
   );

@@ -85,6 +85,7 @@ export async function saveHabit(userId, habit) {
     await supabase.from('habit_frequency_days').delete().eq('habit_id', finalId);
     const dayRows = (habit.frequency.days || []).map((d) => ({
       habit_id: finalId,
+      user_id: userId,
       day_of_week: d,
     }));
     if (dayRows.length > 0) {
@@ -96,6 +97,7 @@ export async function saveHabit(userId, habit) {
   await supabase.from('habit_completions').delete().eq('habit_id', finalId);
   const completionRows = (habit.completions || []).map((key) => ({
     habit_id: finalId,
+    user_id: userId,
     date_key: key,
   }));
   if (completionRows.length > 0) {
@@ -161,7 +163,7 @@ export async function fetchTransactions(userId) {
     name: t.name || '',
     category: t.category || '',
     description: t.description || '',
-    date: t.date ? Number(t.date) : new Date(t.created_at).getTime(),
+    date: t.transaction_date ? (typeof t.transaction_date === 'string' ? new Date(t.transaction_date).getTime() : Number(t.transaction_date)) : new Date(t.created_at).getTime(),
     accountId: t.account_id || null,
     fromAccountId: t.from_account_id || null,
     toAccountId: t.to_account_id || null,
@@ -179,7 +181,7 @@ export async function saveTransaction(userId, tx) {
     name: tx.name || null,
     category: tx.category || null,
     description: tx.description || null,
-    date: tx.date || Date.now(),
+    transaction_date: tx.date || Date.now(),
     account_id: isUUID(tx.accountId) ? tx.accountId : null,
     from_account_id: isUUID(tx.fromAccountId) ? tx.fromAccountId : null,
     to_account_id: isUUID(tx.toAccountId) ? tx.toAccountId : null,
@@ -214,7 +216,7 @@ export async function fetchGoals(userId) {
     icon: g.icon,
     category: g.category,
     description: g.description || '',
-    deadline: g.deadline ? Number(g.deadline) : null,
+    deadline: g.deadline ? (typeof g.deadline === 'string' ? new Date(g.deadline).getTime() : Number(g.deadline)) : null,
     timeframe: g.timeframe || 'medium',
     measureType: g.measure_type,
     targetAmount: g.target_amount ? Number(g.target_amount) : null,
@@ -263,6 +265,7 @@ export async function saveGoal(userId, goal) {
   const checklistRows = (goal.checklistItems || []).map((item, idx) => ({
     id: ensureUUID(item.id),
     goal_id: finalGoalId,
+    user_id: userId,
     text: item.text,
     is_done: !!item.done,
     sort_order: idx,
@@ -276,6 +279,7 @@ export async function saveGoal(userId, goal) {
   const linkedHabitRows = (goal.linkedHabits || []).filter((lh) => isUUID(lh.habitId)).map((lh) => ({
     goal_id: finalGoalId,
     habit_id: lh.habitId,
+    user_id: userId,
     weight: lh.weight || 1,
   }));
   if (linkedHabitRows.length > 0) {

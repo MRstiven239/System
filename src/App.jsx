@@ -8,6 +8,7 @@ import { useHabitModal } from './hooks/useHabitModal';
 import { useGrowthPulse } from './hooks/useGrowthPulse';
 import { useGoals } from './hooks/useGoals';
 import { useReflections } from './hooks/useReflections';
+import { useRecurringTemplates } from './hooks/useRecurringTemplates';
 import { useCloudSync } from './hooks/useCloudSync';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { AuthModal } from './components/auth/AuthModal';
@@ -34,6 +35,7 @@ function AppContent({ theme, themeKey, setThemeKey }) {
   const { bump, pulseKeyFor } = useGrowthPulse();
   const goalsData = useGoals();
   const reflectionsData = useReflections();
+  const recurringData = useRecurringTemplates();
 
   // Cloud Realtime Synchronization Hook
   useCloudSync({
@@ -42,6 +44,7 @@ function AppContent({ theme, themeKey, setThemeKey }) {
     transactions: budget.transactions, setTransactions: budget.setTransactions,
     goals: goalsData.goals, setGoals: goalsData.setGoals,
     reflections: reflectionsData.reflections, setReflections: reflectionsData.setReflections,
+    recurringTemplates: recurringData.templates, setRecurringTemplates: recurringData.setTemplates,
   });
 
   const [isCreating, setIsCreating] = useState(false);
