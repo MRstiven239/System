@@ -37,6 +37,7 @@ export function MoneyView({
   // Modals state
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [templateToRegister, setTemplateToRegister] = useState(null);
+  const [templateToEdit, setTemplateToEdit] = useState(null);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [accountToEdit, setAccountToEdit] = useState(null);
   const [isCreatingTransaction, setIsCreatingTransaction] = useState(false);
@@ -99,7 +100,7 @@ export function MoneyView({
         templates={templates} 
         onCreate={() => setIsCreatingTemplate(true)}
         onRegister={(t) => setTemplateToRegister(t)}
-        onEdit={() => {}}
+        onEdit={(t) => setTemplateToEdit(t)}
         onDelete={deleteTemplate}
       />
 
@@ -160,6 +161,22 @@ export function MoneyView({
             onSubmit={(data) => {
               addTemplate(data);
               setIsCreatingTemplate(false);
+            }}
+          />
+        </Modal>
+      )}
+
+      {templateToEdit && (
+        <Modal onClose={() => setTemplateToEdit(null)}>
+          <h3 style={{ fontFamily: 'Fraunces, serif', color: theme.ink }} className="text-xl font-bold mb-6">
+            Editar movimiento fijo
+          </h3>
+          <RecurringTemplateForm 
+            template={templateToEdit}
+            onCancel={() => setTemplateToEdit(null)}
+            onSubmit={(data) => {
+              updateTemplate(templateToEdit.id, data);
+              setTemplateToEdit(null);
             }}
           />
         </Modal>

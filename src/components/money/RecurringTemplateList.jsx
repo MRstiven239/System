@@ -28,8 +28,25 @@ export function RecurringTemplateList({ templates, onRegister, onEdit, onDelete,
               border: `1px solid ${theme.border}`,
             }}
           >
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-2 transition-opacity">
+              <button 
+                onClick={() => onEdit(t)} 
+                className="text-xs hover:scale-110 transition-transform"
+                title="Editar"
+              >
+                ✏️
+              </button>
+              <button 
+                onClick={() => { if(window.confirm('¿Eliminar fijo mensual?')) onDelete(t.id); }} 
+                className="text-xs hover:scale-110 transition-transform"
+                title="Eliminar"
+              >
+                🗑️
+              </button>
+            </div>
+
             <div className="text-2xl mb-2">{t.icon}</div>
-            <div style={{ color: theme.ink }} className="font-semibold text-sm truncate">{t.name}</div>
+            <div style={{ color: theme.ink }} className="font-semibold text-sm truncate pr-12">{t.name}</div>
             <div style={{ color: t.type === 'income' ? theme.income : theme.inkMuted }} className="text-sm font-medium mt-1">
               {formatCOP(t.amount)}
             </div>
