@@ -23,11 +23,15 @@ npm run build
 npm run preview   # sirve la build de producción localmente para probarla
 ```
 
-## Dónde se guardan tus hábitos
+## Arquitectura Offline-First y Sincronización en la Nube
 
-En el `localStorage` de tu navegador — nada se envía a ningún servidor.
-Si abres la app en otro navegador o en modo incógnito, no verás los
-mismos datos: cada navegador guarda el suyo por separado.
+La aplicación está diseñada para funcionar **100% sin conexión a internet** (Offline-First).
+Todos tus datos se guardan inmediatamente en la base de datos local de tu dispositivo (`IndexedDB`).
+
+- **Si estás conectado:** Los cambios se sincronizan en tiempo real con Supabase. Si abres la app en tu PC y en tu celular al mismo tiempo, los cambios aparecerán al instante por WebSockets.
+- **Si estás desconectado:** Puedes seguir creando hábitos, registrando gastos o marcando objetivos. La aplicación encolará (guardará en una cola interna) todas tus acciones. La próxima vez que te conectes a internet, la aplicación enviará automáticamente todos tus cambios pendientes a la nube sin que pierdas un solo dato.
+
+Se soporta inicio de sesión con Google o Correo Electrónico.
 
 ## Estructura del proyecto
 

@@ -182,8 +182,9 @@ export function balanceHistory(accounts, transactions, range, anchorDate) {
   return dates.map((dateStr) => {
     // Sum all transactions up to and including this date
     let delta = 0;
+    const targetTime = new Date(dateStr + 'T23:59:59.999').getTime();
     for (const tx of sorted) {
-      if (tx.date > dateStr) break;
+      if (tx.date > targetTime) break;
       if (tx.type === 'expense') delta -= tx.amount;
       else if (tx.type === 'income') delta += tx.amount;
       // transfers don't change total balance

@@ -31,6 +31,34 @@ export function useCloudSync({
       try {
         isMigratingRef.current = true;
 
+        // 0. Process Offline Queue
+        const queueRaw = await storageAdapter.getItem('offline-sync-queue');
+        if (queueRaw) {
+          const queue = JSON.parse(queueRaw);
+          if (queue.length > 0) {
+            console.log("Processing offline sync queue of size", queue.length);
+            for (const item of queue) {
+              try {
+                if (item.type === 'saveHabit') await saveHabit(item.userId, item.payload);
+                else if (item.type === 'deleteHabit') await deleteHabitInCloud(item.userId, item.payload);
+                else if (item.type === 'saveAccount') await saveAccount(item.userId, item.payload);
+                else if (item.type === 'deleteAccount') await deleteAccountInCloud(item.userId, item.payload);
+                else if (item.type === 'saveTransaction') await saveTransaction(item.userId, item.payload);
+                else if (item.type === 'deleteTransaction') await deleteTransactionInCloud(item.userId, item.payload);
+                else if (item.type === 'saveGoal') await saveGoal(item.userId, item.payload);
+                else if (item.type === 'deleteGoal') await deleteGoalInCloud(item.userId, item.payload);
+                else if (item.type === 'saveReflection') await saveReflection(item.userId, item.payload);
+                else if (item.type === 'deleteReflection') await deleteReflectionInCloud(item.userId, item.payload);
+                else if (item.type === 'saveRecurringTemplate') await saveRecurringTemplate(item.userId, item.payload);
+                else if (item.type === 'deleteRecurringTemplate') await deleteRecurringTemplateInCloud(item.userId, item.payload);
+              } catch (e) {
+                console.error("Failed to process queue item:", item, e);
+              }
+            }
+            await storageAdapter.setItem('offline-sync-queue', JSON.stringify([]));
+          }
+        }
+
         // Fetch existing cloud data
         const [
           cloudHabits,

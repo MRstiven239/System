@@ -1,4 +1,23 @@
 import { supabase } from '../lib/supabase';
+import { storageAdapter } from './index';
+
+async function enqueueOfflineMutation(type, userId, payload) {
+  try {
+    const queueRaw = await storageAdapter.getItem('offline-sync-queue');
+    const queue = queueRaw ? JSON.parse(queueRaw) : [];
+    queue.push({ type, userId, payload, timestamp: Date.now() });
+    await storageAdapter.setItem('offline-sync-queue', JSON.stringify(queue));
+    console.warn(`[Offline] Enqueued ${type} mutation for later sync.`);
+  } catch (e) {
+    console.error('Failed to enqueue offline mutation:', e);
+  }
+}
+
+function isNetworkError(error) {
+  if (!error) return false;
+  const msg = (error.message || '').toLowerCase();
+  return msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('offline');
+}
 
 function isUUID(id) {
   return typeof id === 'string' && id.length === 36 && id.includes('-');
@@ -74,6 +93,10 @@ export async function saveHabit(userId, habit) {
     .single();
 
   if (error) {
+    if (isNetworkError(error)) {
+      await enqueueOfflineMutation('saveHabit', userId, habit);
+      return { ...habit, id: habitId };
+    }
     console.error('Error saving habit to Supabase:', error);
     throw error;
   }
@@ -109,7 +132,10 @@ export async function saveHabit(userId, habit) {
 
 export async function deleteHabitInCloud(userId, habitId) {
   const { error } = await supabase.from('habits').delete().eq('id', habitId).eq('user_id', userId);
-  if (error) console.error('Error deleting habit:', error);
+  if (error) {
+    if (isNetworkError(error)) await enqueueOfflineMutation('deleteHabit', userId, habitId);
+    else console.error('Error deleting habit:', error);
+  }
 }
 
 // ─── ACCOUNTS ─────────────────────────────────────────────────────────────────
@@ -137,12 +163,19 @@ export async function saveAccount(userId, account) {
   };
 
   const { data, error } = await supabase.from('accounts').upsert(payload).select().single();
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      await enqueueOfflineMutation('saveAccount', userId, account);
+      return { ...account, id: accountId };
+    }
+    throw error;
+  }
   return { ...account, id: data.id };
 }
 
 export async function deleteAccountInCloud(userId, accountId) {
-  await supabase.from('accounts').delete().eq('id', accountId).eq('user_id', userId);
+  const { error } = await supabase.from('accounts').delete().eq('id', accountId).eq('user_id', userId);
+  if (error && isNetworkError(error)) await enqueueOfflineMutation('deleteAccount', userId, accountId);
 }
 
 // ─── TRANSACTIONS ─────────────────────────────────────────────────────────────
@@ -188,12 +221,19 @@ export async function saveTransaction(userId, tx) {
   };
 
   const { data, error } = await supabase.from('transactions').upsert(payload).select().single();
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      await enqueueOfflineMutation('saveTransaction', userId, tx);
+      return { ...tx, id: txId };
+    }
+    throw error;
+  }
   return { ...tx, id: data.id };
 }
 
 export async function deleteTransactionInCloud(userId, txId) {
-  await supabase.from('transactions').delete().eq('id', txId).eq('user_id', userId);
+  const { error } = await supabase.from('transactions').delete().eq('id', txId).eq('user_id', userId);
+  if (error && isNetworkError(error)) await enqueueOfflineMutation('deleteTransaction', userId, txId);
 }
 
 // ─── GOALS ────────────────────────────────────────────────────────────────────
@@ -257,7 +297,13 @@ export async function saveGoal(userId, goal) {
   };
 
   const { data, error } = await supabase.from('goals').upsert(payload).select().single();
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      await enqueueOfflineMutation('saveGoal', userId, goal);
+      return { ...goal, id: goalId };
+    }
+    throw error;
+  }
   const finalGoalId = data.id;
 
   // Sync checklist items
@@ -290,7 +336,8 @@ export async function saveGoal(userId, goal) {
 }
 
 export async function deleteGoalInCloud(userId, goalId) {
-  await supabase.from('goals').delete().eq('id', goalId).eq('user_id', userId);
+  const { error } = await supabase.from('goals').delete().eq('id', goalId).eq('user_id', userId);
+  if (error && isNetworkError(error)) await enqueueOfflineMutation('deleteGoal', userId, goalId);
 }
 
 // ─── REFLECTIONS ──────────────────────────────────────────────────────────────
@@ -319,12 +366,19 @@ export async function saveReflection(userId, reflection) {
   };
 
   const { data, error } = await supabase.from('reflections').upsert(payload).select().single();
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      await enqueueOfflineMutation('saveReflection', userId, reflection);
+      return { ...reflection, id: reflectionId };
+    }
+    throw error;
+  }
   return { ...reflection, id: data.id };
 }
 
 export async function deleteReflectionInCloud(userId, reflectionId) {
-  await supabase.from('reflections').delete().eq('id', reflectionId).eq('user_id', userId);
+  const { error } = await supabase.from('reflections').delete().eq('id', reflectionId).eq('user_id', userId);
+  if (error && isNetworkError(error)) await enqueueOfflineMutation('deleteReflection', userId, reflectionId);
 }
 
 // ─── RECURRING TEMPLATES ──────────────────────────────────────────────────────
@@ -359,10 +413,17 @@ export async function saveRecurringTemplate(userId, template) {
   };
 
   const { data, error } = await supabase.from('recurring_templates').upsert(payload).select().single();
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      await enqueueOfflineMutation('saveRecurringTemplate', userId, template);
+      return { ...template, id: templateId };
+    }
+    throw error;
+  }
   return { ...template, id: data.id };
 }
 
 export async function deleteRecurringTemplateInCloud(userId, templateId) {
-  await supabase.from('recurring_templates').delete().eq('id', templateId).eq('user_id', userId);
+  const { error } = await supabase.from('recurring_templates').delete().eq('id', templateId).eq('user_id', userId);
+  if (error && isNetworkError(error)) await enqueueOfflineMutation('deleteRecurringTemplate', userId, templateId);
 }
