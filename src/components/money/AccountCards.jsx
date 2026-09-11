@@ -19,13 +19,13 @@ export function AccountCards({ accounts, transactions, onAddAccount, onDeleteAcc
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
         {accounts.map(acc => {
           const effectiveBalance = balances.get(acc.id) ?? acc.initialBalance;
           return (
             <div
               key={acc.id}
-              className="relative p-4 rounded-2xl group transition-transform hover:-translate-y-1"
+              className="relative p-4 rounded-2xl group transition-transform hover:-translate-y-1 snap-start flex-none w-[160px] sm:w-[200px]"
               style={{ background: theme.surface, border: `1px solid ${theme.border}` }}
             >
               <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

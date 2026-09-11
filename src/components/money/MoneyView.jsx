@@ -100,6 +100,7 @@ export function MoneyView({
                 <ArrowRightLeft size={16} /> ⇄ Transferencia
               </button>
             </div>
+            </>
           )}
         </div>
       </div>
