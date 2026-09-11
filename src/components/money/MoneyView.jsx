@@ -59,7 +59,7 @@ export function MoneyView({
         <h2 style={{ color: theme.ink, fontSize: '32px', fontWeight: 700, margin: 0, lineHeight: 1.1 }}>
           Tu Dinero
         </h2>
-        <div className="relative">
+        <div className="relative z-50">
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             style={{ background: theme.surfaceAlt, color: theme.ink, border: `1px solid ${theme.border}` }}
@@ -69,10 +69,15 @@ export function MoneyView({
           </button>
           
           {isDropdownOpen && (
-            <div 
-              className="absolute top-full right-0 mt-2 p-2 rounded-xl shadow-xl flex flex-col gap-1 w-48 z-50 animate-fade-in" 
-              style={{ background: theme.surfaceAlt, border: `1px solid ${theme.borderHover}` }}
-            >
+            <>
+              <div 
+                className="fixed inset-0" 
+                onClick={() => setIsDropdownOpen(false)} 
+              />
+              <div 
+                className="absolute top-full right-0 mt-2 p-2 rounded-xl shadow-xl flex flex-col gap-1 w-48 animate-fade-in" 
+                style={{ background: theme.surfaceAlt, border: `1px solid ${theme.borderHover}` }}
+              >
               <button 
                 onClick={() => { setTxType('income'); setIsCreatingTransaction(true); setIsDropdownOpen(false); }} 
                 className="text-left px-3 py-2 rounded-lg hover:bg-black/5 flex items-center gap-2" 
