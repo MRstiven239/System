@@ -55,7 +55,7 @@ export function MoneyView({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8 animate-fade-in-up">
+      <div className="flex justify-between items-center mb-8 animate-fade-in-up relative z-50">
         <h2 style={{ color: theme.ink, fontSize: '32px', fontWeight: 700, margin: 0, lineHeight: 1.1 }}>
           Tu Dinero
         </h2>
