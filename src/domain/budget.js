@@ -200,10 +200,15 @@ function buildDatePoints(range, anchorDate) {
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   if (range === 'week') {
-    // Last 7 days including today
+    // Current calendar week (Monday to Sunday)
+    const day = anchor.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    const monday = new Date(anchor);
+    monday.setDate(monday.getDate() - diffToMonday);
+
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(anchor);
-      d.setDate(d.getDate() - (6 - i));
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
       return fmt(d);
     });
   }

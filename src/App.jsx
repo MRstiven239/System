@@ -30,7 +30,7 @@ import { MoneyView } from './components/money/MoneyView';
 function AppContent({ theme, themeKey, setThemeKey }) {
   const { habits, setHabits, loaded, saveError, addHabit, updateHabit, deleteHabit, toggleCompletion } = useHabits();
   const budget = useBudget();
-  const { range, setRange } = useCalendarNavigation('month');
+  const { range, setRange } = useCalendarNavigation('week');
   const modal = useHabitModal();
   const { bump, pulseKeyFor } = useGrowthPulse();
   const goalsData = useGoals();
