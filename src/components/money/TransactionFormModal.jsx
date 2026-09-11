@@ -3,10 +3,10 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Modal } from '../common/Modal';
 import { ArrowRightLeft } from 'lucide-react';
 
-export function TransactionFormModal({ onClose, onSubmit, accounts }) {
+export function TransactionFormModal({ onClose, onSubmit, accounts, initialType = 'expense' }) {
   const theme = useTheme();
   const [name, setName] = useState('');
-  const [type, setType] = useState('expense');
+  const [type, setType] = useState(initialType);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
