@@ -7,7 +7,6 @@
     <title>Mi Vida — Hábitos, finanzas y objetivos</title>
 
     <!-- PWA -->
-    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0f1724" />
     <meta name="description" content="Tu jardín personal de hábitos, finanzas y objetivos. Organiza tu vida desde un solo lugar." />
 
@@ -16,20 +15,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Mi Vida" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <script type="module" crossorigin src="/assets/index-DJwlMh6l.js"></script>
+    <script type="module" crossorigin src="/assets/index-5ZN8X0Rj.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-B5u1oCzX.css">
-  </head>
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
   <body>
     <div id="root"></div>
-
-    <!-- Register Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
   </body>
 </html>
-

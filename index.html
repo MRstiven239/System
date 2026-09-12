@@ -7,7 +7,6 @@
     <title>Mi Vida — Hábitos, finanzas y objetivos</title>
 
     <!-- PWA -->
-    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0f1724" />
     <meta name="description" content="Tu jardín personal de hábitos, finanzas y objetivos. Organiza tu vida desde un solo lugar." />
 
@@ -20,15 +19,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-
-    <!-- Register Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
   </body>
 </html>
-
