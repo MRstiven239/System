@@ -79,7 +79,7 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
     { id: 'transfer', label: 'Transferencias' },
   ];
 
-  function renderTransaction(t) {
+  function renderTransaction(t, canDelete = false) {
     const acc = accounts.find(a => a.id === t.accountId);
     const toAcc = t.toAccountId ? accounts.find(a => a.id === t.toAccountId) : null;
     const isIncome = t.type === 'income';
@@ -138,13 +138,15 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
           >
             {isTransfer ? '' : isIncome ? '+' : '-'}{formatCOP(t.amount)}
           </div>
-          <button
-            onClick={() => onDelete(t.id)}
-            style={{ color: theme.inkFaint }}
-            className="hover:text-red-500 transition-colors text-lg leading-none"
-          >
-            ×
-          </button>
+          {canDelete && (
+            <button
+              onClick={() => onDelete(t.id)}
+              style={{ color: theme.inkFaint }}
+              className="hover:text-red-500 transition-colors text-lg leading-none"
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
     );
@@ -220,7 +222,7 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
               </p>
             </div>
           ) : (
-            todayTransactions.map(renderTransaction)
+            todayTransactions.map(t => renderTransaction(t, true))
           )}
         </div>
       )}
