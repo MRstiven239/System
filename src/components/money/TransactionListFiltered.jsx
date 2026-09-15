@@ -138,7 +138,7 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
           >
             {isTransfer ? '' : isIncome ? '+' : '-'}{formatCOP(t.amount)}
           </div>
-          {canDelete && (
+          {canDelete === true && (
             <button
               onClick={() => onDelete(t.id)}
               style={{ color: theme.inkFaint }}
@@ -249,7 +249,7 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
                 </h4>
 
                 <div className="flex flex-col gap-2">
-                  {group.transactions.map(renderTransaction)}
+                  {group.transactions.map(t => renderTransaction(t, false))}
                 </div>
               </div>
             ))
