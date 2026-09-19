@@ -11,9 +11,19 @@ export function TransactionFormModal({ onClose, onSubmit, accounts, initialType 
   const [category, setCategory] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   // Transfer-specific
-  const [fromAccountId, setFromAccountId] = useState(accounts[0]?.id || '');
-  const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
+  const [fromAccountId, setFromAccountIdRaw] = useState(accounts[0]?.id || '');
+  const [toAccountId, setToAccountId] = useState(accounts[1]?.id || accounts[0]?.id || '');
   const [description, setDescription] = useState('');
+
+  // When fromAccountId changes, ensure toAccountId is not the same
+  const setFromAccountId = (newFromId) => {
+    setFromAccountIdRaw(newFromId);
+    // If toAccountId would become the same, pick the first different one
+    if (newFromId === toAccountId) {
+      const firstDifferent = accounts.find(a => a.id !== newFromId);
+      if (firstDifferent) setToAccountId(firstDifferent.id);
+    }
+  };
 
   const isTransfer = type === 'transfer';
 
