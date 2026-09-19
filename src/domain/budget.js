@@ -67,7 +67,8 @@ export function createTransfer({ amount, description, fromAccountId, toAccountId
     type: 'transfer',
     amount: Math.abs(Number(amount)),
     description: description || '',
-    accountId: fromAccountId,   // source
+    accountId: fromAccountId,   // source (used locally for balance computation)
+    fromAccountId,              // source (used by DB mapper)
     toAccountId,                // destination
     date,
     createdAt: Date.now(),
