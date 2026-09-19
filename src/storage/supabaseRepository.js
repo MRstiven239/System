@@ -216,7 +216,7 @@ export async function saveTransaction(userId, tx) {
     description: tx.description || null,
     transaction_date: tx.date || Date.now(),
     account_id: isUUID(tx.accountId) ? tx.accountId : null,
-    from_account_id: isUUID(tx.fromAccountId) ? tx.fromAccountId : null,
+    from_account_id: isUUID(tx.fromAccountId) ? tx.fromAccountId : (tx.type === 'transfer' && isUUID(tx.accountId) ? tx.accountId : null),
     to_account_id: isUUID(tx.toAccountId) ? tx.toAccountId : null,
   };
 
