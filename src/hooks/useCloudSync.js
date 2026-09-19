@@ -108,7 +108,9 @@ export function useCloudSync({
             console.log('Subiendo datos locales a Supabase para:', user.email);
             for (const h of localHabits) await saveHabit(user.id, h);
             for (const a of localAccounts) await saveAccount(user.id, a);
-            for (const t of localTxs) await saveTransaction(user.id, t);
+            for (const t of localTxs) {
+              try { await saveTransaction(user.id, t); } catch (e) { console.warn('Skipping transaction migration:', t.id, e.message); }
+            }
             for (const g of localGoals) await saveGoal(user.id, g);
             for (const r of localReflections) await saveReflection(user.id, r);
             for (const tm of localTemplates) await saveRecurringTemplate(user.id, tm);

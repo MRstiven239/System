@@ -91,7 +91,7 @@ export function useBudget() {
     (formData) => {
       const newTx = createTransfer(formData);
       setTransactions((prev) => [...prev, newTx]);
-      if (user) saveTransaction(user.id, newTx).catch(e => alert('Error saving transfer: ' + e.message));
+      if (user) saveTransaction(user.id, newTx).catch(e => console.warn('Transfer sync error (saved locally):', e.message));
     },
     [setTransactions, user]
   );
