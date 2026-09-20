@@ -206,22 +206,30 @@ export async function fetchTransactions(userId) {
 
 export async function saveTransaction(userId, tx) {
   const txId = ensureUUID(tx.id);
+  const isTransfer = tx.type === 'transfer';
+  const fromId = isUUID(tx.fromAccountId) ? tx.fromAccountId : (isTransfer && isUUID(tx.accountId) ? tx.accountId : null);
+  const toId = isUUID(tx.toAccountId) ? tx.toAccountId : null;
+
   const payload = {
     id: txId,
     user_id: userId,
     type: tx.type,
     amount: tx.amount,
-    name: tx.name || null,
+    name: tx.name || (isTransfer ? 'Transferencia' : null),
     category: tx.category || null,
     description: tx.description || null,
     transaction_date: tx.date || Date.now(),
-    account_id: isUUID(tx.accountId) ? tx.accountId : null,
-    from_account_id: isUUID(tx.fromAccountId) ? tx.fromAccountId : (tx.type === 'transfer' && isUUID(tx.accountId) ? tx.accountId : null),
-    to_account_id: isUUID(tx.toAccountId) ? tx.toAccountId : null,
+    // For transfers: account_id should be null, use from/to instead
+    account_id: isTransfer ? null : (isUUID(tx.accountId) ? tx.accountId : null),
+    from_account_id: isTransfer ? fromId : null,
+    to_account_id: isTransfer ? toId : null,
   };
+
+  console.log('[saveTransaction] payload:', JSON.stringify(payload));
 
   const { data, error } = await supabase.from('transactions').upsert(payload).select().single();
   if (error) {
+    console.error('[saveTransaction] DB error:', error.message, error.details, error.code);
     if (isNetworkError(error)) {
       await enqueueOfflineMutation('saveTransaction', userId, tx);
       return { ...tx, id: txId };
