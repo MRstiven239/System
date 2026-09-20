@@ -197,7 +197,7 @@ export async function fetchTransactions(userId) {
     category: t.category || '',
     description: t.description || '',
     date: t.transaction_date ? (typeof t.transaction_date === 'string' ? new Date(t.transaction_date).getTime() : Number(t.transaction_date)) : new Date(t.created_at).getTime(),
-    accountId: t.account_id || null,
+    accountId: t.account_id || t.from_account_id || null,
     fromAccountId: t.from_account_id || null,
     toAccountId: t.to_account_id || null,
     createdAt: new Date(t.created_at).getTime(),

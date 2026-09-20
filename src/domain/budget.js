@@ -91,7 +91,10 @@ export function computeBalances(accounts, transactions) {
     } else if (tx.type === 'income') {
       map.set(tx.accountId, (map.get(tx.accountId) ?? 0) + tx.amount);
     } else if (tx.type === 'transfer') {
-      map.set(tx.accountId, (map.get(tx.accountId) ?? 0) - tx.amount);
+      const sourceId = tx.fromAccountId || tx.accountId;
+      if (sourceId) {
+        map.set(sourceId, (map.get(sourceId) ?? 0) - tx.amount);
+      }
       if (tx.toAccountId) {
         map.set(tx.toAccountId, (map.get(tx.toAccountId) ?? 0) + tx.amount);
       }
