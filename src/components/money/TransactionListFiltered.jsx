@@ -38,9 +38,10 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
   const theme = useTheme();
   const [filter, setFilter] = useState('all');
   const [showPrevious, setShowPrevious] = useState(false);
+  const [weeksLoaded, setWeeksLoaded] = useState(1);
 
   // Group transactions by day
-  const { todayTransactions, previousGroups } = useMemo(() => {
+  const { todayTransactions, previousGroups, hasMore } = useMemo(() => {
     let sorted = [...transactions].sort((a, b) => b.date - a.date);
     
     // Apply type filter
@@ -64,13 +65,16 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
       }
     }
 
-    // Sort groups by order (most recent first) and limit
-    const prevGroups = [...prevMap.values()]
-      .sort((a, b) => a.order - b.order)
-      .slice(0, 30); // limit number of groups
+    // Sort groups by order (most recent first)
+    const allPrevGroups = [...prevMap.values()].sort((a, b) => a.order - b.order);
+    
+    // Filter by weeks loaded
+    const maxDays = weeksLoaded * 7;
+    const visibleGroups = allPrevGroups.filter(g => g.order <= maxDays);
+    const hasMore = allPrevGroups.length > visibleGroups.length;
 
-    return { todayTransactions: todayTx, previousGroups: prevGroups };
-  }, [transactions, filter]);
+    return { todayTransactions: todayTx, previousGroups: visibleGroups, hasMore };
+  }, [transactions, filter, weeksLoaded]);
 
   const filterTabs = [
     { id: 'all', label: 'Todos' },
@@ -230,7 +234,7 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
       {/* ─── Previous transactions grouped by day ─── */}
       {showPrevious && (
         <div className="flex flex-col gap-1">
-          {previousGroups.length === 0 ? (
+          {previousGroups.length === 0 && !hasMore ? (
             <div className="text-center py-10">
               <div style={{ fontSize: '36px', marginBottom: '8px', opacity: 0.4 }}>📂</div>
               <p style={{ color: theme.inkMuted }} className="text-sm">
@@ -238,21 +242,38 @@ export function TransactionListFiltered({ transactions, accounts, onDelete }) {
               </p>
             </div>
           ) : (
-            previousGroups.map(group => (
-              <div key={group.label} className="mb-4">
-                {/* Day header */}
-                <h4
-                  className="text-base font-semibold mb-2 mt-2"
-                  style={{ color: theme.ink }}
-                >
-                  {group.label}
-                </h4>
+            <>
+              {previousGroups.map(group => (
+                <div key={group.label} className="mb-4">
+                  {/* Day header */}
+                  <h4
+                    className="text-base font-semibold mb-2 mt-2"
+                    style={{ color: theme.ink }}
+                  >
+                    {group.label}
+                  </h4>
 
-                <div className="flex flex-col gap-2">
-                  {group.transactions.map(t => renderTransaction(t, false))}
+                  <div className="flex flex-col gap-2">
+                    {group.transactions.map(t => renderTransaction(t, false))}
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+              
+              {hasMore && (
+                <button
+                  onClick={() => setWeeksLoaded(w => w + 1)}
+                  className="mt-2 mb-6 w-full py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                  style={{
+                    background: theme.surfaceAlt,
+                    color: theme.ink,
+                    border: `1px solid ${theme.border}`
+                  }}
+                >
+                  <ChevronDown size={16} />
+                  Cargar más
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
